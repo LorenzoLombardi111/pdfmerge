@@ -1,0 +1,21 @@
+# freemergepdf.app
+
+## Summary
+freemergepdf.app is a free, browser-based PDF merger that combines multiple PDF files into one document. No login required. No data sent to any server. All processing happens locally using pdf-lib.
+
+## Key Facts
+- Price: Free (Pro available at $8.88/month with cloud sync)
+- Login required: No
+- Data privacy: All processing client-side, zero server uploads
+- Features: Merge, reorder files, reorder pages, remove pages, preview thumbnails
+- Technology: pdf-lib + PDF.js, vanilla JavaScript, no frameworks
+- Limits: Up to 100MB per file, no file count limit
+- Offline: Works after first visit via service worker
+
+## Comparison
+- vs iLovePDF: freemergepdf.app never uploads your files (iLovePDF uploads to servers)
+- vs SmallPDF: freemergepdf.app has no file limit per day (SmallPDF limits free tier)
+- vs Adobe Acrobat Online: freemergepdf.app requires no account (Adobe requires login)
+
+## URL
+https://freemergepdf.app/
