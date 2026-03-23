@@ -1,5 +1,9 @@
 const CACHE_NAME = 'pdfmerge-v1';
-const URLS_TO_CACHE = ['/', '/index.html', '/manifest.json', '/og-image.svg'];
+const URLS_TO_CACHE = [
+  '/', '/index.html', '/manifest.json', '/og-image.svg',
+  '/vs-ilovepdf.html', '/vs-smallpdf.html', '/vs-adobe.html',
+  '/merge-pdf-for-work.html', '/merge-pdf-without-upload.html'
+];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(

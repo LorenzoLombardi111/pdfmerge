@@ -20,7 +20,7 @@ const faqLD = {
     {
       "@type": "Question",
       "name": "Are my PDF files uploaded to a server?",
-      "acceptedAnswer": { "@type": "Answer", "text": "No. Your PDF files never leave your browser. All processing happens locally on your device using JavaScript. There is no server-side component." }
+      "acceptedAnswer": { "@type": "Answer", "text": "No. Your PDF files never leave your browser. All processing happens locally on your device using JavaScript. There is no server-side component — freemergepdf.app is a static website that runs entirely in your browser." }
     },
     {
       "@type": "Question",
@@ -30,17 +30,17 @@ const faqLD = {
     {
       "@type": "Question",
       "name": "What is the maximum file size for merging?",
-      "acceptedAnswer": { "@type": "Answer", "text": "freemergepdf.app supports individual files up to 100MB and a combined total of 500MB across all files." }
+      "acceptedAnswer": { "@type": "Answer", "text": "freemergepdf.app supports individual files up to 100MB and a combined total of 500MB across all files. For very large merges, a progress indicator shows the current status." }
     },
     {
       "@type": "Question",
       "name": "Can I merge password-protected PDFs?",
-      "acceptedAnswer": { "@type": "Answer", "text": "No. Password-protected (encrypted) PDFs cannot be merged directly. You will need to remove the password protection first using your PDF reader's security settings." }
+      "acceptedAnswer": { "@type": "Answer", "text": "No. Password-protected (encrypted) PDFs cannot be merged directly. You will need to remove the password protection first using your PDF reader's security settings, then add the unprotected file to freemergepdf.app." }
     },
     {
       "@type": "Question",
       "name": "Does freemergepdf.app work on mobile?",
-      "acceptedAnswer": { "@type": "Answer", "text": "Yes. freemergepdf.app is fully responsive and works on smartphones and tablets. The interface adapts to smaller screens with touch-friendly controls." }
+      "acceptedAnswer": { "@type": "Answer", "text": "Yes. freemergepdf.app is fully responsive and works on smartphones and tablets. The interface adapts to smaller screens with touch-friendly controls for adding, reordering, and merging PDF files." }
     }
   ]
 };
@@ -107,7 +107,7 @@ const html = `<!DOCTYPE html>
   <header class="header">
     <a href="/" class="brand">freemergepdf.app</a>
     <div class="header-actions">
-      <button class="theme-toggle" title="Toggle dark mode">
+      <button class="theme-toggle" title="Toggle dark mode" aria-label="Toggle dark mode">
         <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
         <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
       </button>
@@ -116,11 +116,11 @@ const html = `<!DOCTYPE html>
   </header>
 
   <main class="main-area">
-    <input type="file" id="file-input" accept=".pdf" multiple>
-    <input type="file" id="file-input-mini" accept=".pdf" multiple>
+    <input type="file" id="file-input" accept=".pdf" multiple aria-label="Select PDF files to merge">
+    <input type="file" id="file-input-mini" accept=".pdf" multiple aria-label="Add more PDF files">
 
     <!-- Empty state -->
-    <div class="drop-zone-empty">
+    <div class="drop-zone-empty" role="button" aria-label="Upload PDF files" tabindex="0">
       <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="12" y="6" width="40" height="52" rx="4" stroke-linecap="round"/><path d="M22 6V2h20v4" stroke-linecap="round"/><line x1="22" y1="22" x2="42" y2="22"/><line x1="22" y1="30" x2="42" y2="30"/><line x1="22" y1="38" x2="34" y2="38"/><path d="M36 46l6 6 6-6M42 52V40" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
       <div class="dz-title">Drop PDF files here or click to browse</div>
       <div class="dz-sub">Combine multiple PDFs into one document — free, no upload</div>
@@ -134,8 +134,8 @@ const html = `<!DOCTYPE html>
           <button class="btn btn-secondary" id="add-more-btn">+ Add more files</button>
           <span class="file-stats">0 files, 0 pages</span>
         </div>
-        <div class="file-list"></div>
-        <div class="drop-zone-mini">
+        <div class="file-list" role="list" aria-label="PDF files to merge"></div>
+        <div class="drop-zone-mini" role="button" aria-label="Add more PDF files" tabindex="0">
           <span>Drop more PDFs here or click to add</span>
         </div>
       </div>
@@ -151,14 +151,14 @@ const html = `<!DOCTYPE html>
         <button class="btn btn-primary btn-lg" id="merge-btn" style="width:100%" disabled>Merge PDFs into One</button>
 
         <div class="progress-section">
-          <div class="progress-bar-track"><div class="progress-bar-fill"></div></div>
-          <div class="progress-text">Preparing...</div>
+          <div class="progress-bar-track" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Merge progress"><div class="progress-bar-fill"></div></div>
+          <div class="progress-text" aria-live="polite">Preparing...</div>
         </div>
 
         <div class="download-section">
           <div class="success-msg">&#10003; Merged successfully!</div>
           <div class="output-info"></div>
-          <button class="btn btn-primary btn-lg" id="download-btn" style="width:100%;margin-bottom:8px">Download Merged PDF</button>
+          <button class="btn btn-primary btn-lg" id="download-btn" style="width:100%;margin-bottom:8px" aria-label="Download merged PDF">Download Merged PDF</button>
           <button class="btn btn-secondary" id="merge-again-btn" style="width:100%">Merge Again</button>
         </div>
 
@@ -177,7 +177,7 @@ const html = `<!DOCTYPE html>
   </div>
 
   <div class="attribution"><span class="full-text">by freesuite.app</span><span class="short-text">freesuite.app</span></div>
-  <div class="toast-container"></div>
+  <div class="toast-container" aria-live="polite" role="status"></div>
 
   ${seoHtml}
 

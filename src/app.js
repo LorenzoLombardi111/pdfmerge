@@ -200,6 +200,7 @@
     pdfFiles.forEach((pf, idx) => {
       const card = document.createElement('div');
       card.className = 'file-card';
+      card.setAttribute('role', 'listitem');
       card.dataset.id = pf.id;
       card.draggable = true;
 
@@ -207,15 +208,15 @@
 
       card.innerHTML = `
         <div class="file-card-main">
-          <span class="drag-handle" title="Drag to reorder">☰</span>
+          <span class="drag-handle" title="Drag to reorder" aria-label="Reorder" aria-roledescription="sortable">☰</span>
           <div class="file-thumb"></div>
           <div class="file-info">
             <div class="file-name" title="${pf.name}">${pf.name}</div>
             <div class="file-meta">${activePages} page${activePages !== 1 ? 's' : ''} · ${formatSize(pf.size)}</div>
           </div>
           <div class="file-actions">
-            <button class="btn-icon chevron-btn" title="Show pages"><span class="chevron ${pf.expanded ? 'open' : ''}">▶</span></button>
-            <button class="btn-icon remove" title="Remove file">✕</button>
+            <button class="btn-icon chevron-btn" title="Show pages" aria-expanded="${pf.expanded}" aria-label="Show pages for ${pf.name}"><span class="chevron ${pf.expanded ? 'open' : ''}">▶</span></button>
+            <button class="btn-icon remove" title="Remove file" aria-label="Remove ${pf.name}">✕</button>
           </div>
         </div>
         <div class="page-grid ${pf.expanded ? 'open' : ''}"></div>
@@ -237,6 +238,8 @@
         if (pf.expanded) {
           await renderPageGrid(pf, card.querySelector('.page-grid'));
         }
+        var chevronBtn = card.querySelector('.chevron-btn');
+        chevronBtn.setAttribute('aria-expanded', pf.expanded);
         card.querySelector('.chevron').classList.toggle('open', pf.expanded);
         card.querySelector('.page-grid').classList.toggle('open', pf.expanded);
       });
@@ -324,6 +327,7 @@
       const removeBtn = document.createElement('button');
       removeBtn.className = 'page-remove';
       removeBtn.textContent = '✕';
+      removeBtn.setAttribute('aria-label', 'Remove page ' + (pg.index + 1));
       removeBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         pg.removed = true;
@@ -400,7 +404,9 @@
 
       for (const pf of pdfFiles) {
         progressText.textContent = 'Merging file ' + (processed + 1) + ' of ' + total + '...';
-        progressFill.style.width = ((processed / total) * 100) + '%';
+        var pct = Math.round((processed / total) * 100);
+        progressFill.style.width = pct + '%';
+        progressFill.parentElement.setAttribute('aria-valuenow', pct);
 
         const pdf = await PDFLib.PDFDocument.load(pf.arrayBuffer);
         const activeIndices = pf.pages
@@ -416,6 +422,7 @@
       }
 
       progressFill.style.width = '100%';
+      progressFill.parentElement.setAttribute('aria-valuenow', '100');
       progressText.textContent = 'Finalizing...';
 
       mergedBytes = await mergedPdf.save();

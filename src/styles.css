@@ -254,7 +254,11 @@ html.dark .theme-toggle .icon-moon { display: block; }
   cursor: grab;
   font-size: 16px;
   flex-shrink: 0;
-  width: 20px;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   text-align: center;
   user-select: none;
   font-family: 'DM Sans', sans-serif;
@@ -302,8 +306,8 @@ html.dark .theme-toggle .icon-moon { display: block; }
   flex-shrink: 0;
 }
 .btn-icon {
-  width: 28px;
-  height: 28px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -355,8 +359,8 @@ html.dark .theme-toggle .icon-moon { display: block; }
   position: absolute;
   top: 2px;
   right: 2px;
-  width: 18px;
-  height: 18px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   background: rgba(0,0,0,0.6);
   color: #fff;
