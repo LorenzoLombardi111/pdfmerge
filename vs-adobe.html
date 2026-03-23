@@ -136,7 +136,7 @@
       --border: #e8e4dd;
       --text-primary: #1a1917;
       --text-secondary: #6b6760;
-      --text-muted: #9e9b96;
+      --text-muted: #736f69;
       --accent: #C49A2A;
       --accent-hover: #A8831F;
       --accent-text: #ffffff;
@@ -149,7 +149,7 @@
       --border: #2e2b27;
       --text-primary: #f0ede8;
       --text-secondary: #9e9b96;
-      --text-muted: #6b6760;
+      --text-muted: #8a8680;
       --accent: #D4A835;
       --accent-hover: #C49A2A;
       --accent-text: #ffffff;
@@ -469,6 +469,7 @@
       }
     }
   </style>
+  <script>(function(){var s=localStorage.getItem('suite_theme');if(s==='dark'||(!s&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark')}})()</script>
 </head>
 <body>
 
@@ -631,27 +632,6 @@
   <!-- Attribution badge -->
   <a href="https://freesuite.app" class="attribution" target="_blank" rel="noopener">by freesuite.app</a>
 
-  <script>
-    // Dark mode toggle
-    (function() {
-      var toggle = document.getElementById('themeToggle');
-      var html = document.documentElement;
-
-      // Read stored preference
-      var stored = localStorage.getItem('suite_theme');
-      if (stored === 'dark') {
-        html.classList.add('dark');
-      } else if (stored === 'light') {
-        html.classList.remove('dark');
-      } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-        html.classList.add('dark');
-      }
-
-      toggle.addEventListener('click', function() {
-        var isDark = html.classList.toggle('dark');
-        localStorage.setItem('suite_theme', isDark ? 'dark' : 'light');
-      });
-    })();
-  </script>
+  <script>document.getElementById('themeToggle').addEventListener('click',function(){document.documentElement.classList.toggle('dark');localStorage.setItem('suite_theme',document.documentElement.classList.contains('dark')?'dark':'light')})</script>
 </body>
 </html>

@@ -43,7 +43,7 @@
   --border: #e8e4dd;
   --text-primary: #1a1917;
   --text-secondary: #6b6760;
-  --text-muted: #9e9b96;
+  --text-muted: #736f69;
   --accent: #C49A2A;
   --accent-hover: #A8831F;
   --accent-text: #ffffff;
@@ -58,7 +58,7 @@ html.dark {
   --border: #2e2b27;
   --text-primary: #f0ede8;
   --text-secondary: #9e9b96;
-  --text-muted: #6b6760;
+  --text-muted: #8a8680;
   --accent: #D4A835;
   --accent-hover: #C49A2A;
   --accent-text: #ffffff;
@@ -119,8 +119,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: transparent;
@@ -130,9 +130,9 @@ body {
 }
 .theme-toggle:hover { background: var(--surface); }
 .theme-toggle svg { width: 18px; height: 18px; }
-.theme-toggle .icon-moon { display: none; }
-html.dark .theme-toggle .icon-sun { display: none; }
-html.dark .theme-toggle .icon-moon { display: block; }
+.theme-toggle .icon-sun { display: none; }
+html.dark .theme-toggle .icon-moon { display: none; }
+html.dark .theme-toggle .icon-sun { display: block; }
 
 /* Buttons */
 .btn {
@@ -386,7 +386,7 @@ html.dark .theme-toggle .icon-moon { display: block; }
 .page-thumb canvas { width: 100%; height: 100%; object-fit: contain; }
 .page-thumb .page-num {
   font-family: 'DM Sans', sans-serif;
-  font-size: 10px;
+  font-size: 11px;
   text-align: center;
   color: var(--text-muted);
   padding: 2px 0;
@@ -403,14 +403,16 @@ html.dark .theme-toggle .icon-moon { display: block; }
   color: #fff;
   border: none;
   cursor: pointer;
-  font-size: 10px;
+  font-size: 12px;
   display: none;
   align-items: center;
   justify-content: center;
   line-height: 1;
   font-family: 'DM Sans', sans-serif;
 }
-.page-thumb:hover .page-remove { display: flex; }
+.page-thumb:hover .page-remove,
+.page-thumb .page-remove:focus { display: flex; }
+@media (hover: none) { .page-thumb .page-remove { display: flex; } }
 
 /* Mini drop zone */
 .drop-zone-mini {
@@ -883,7 +885,6 @@ input[type="file"] { display: none; }
   // ---- State ----
   let pdfFiles = []; // { id, file, name, size, pageCount, pages: [{removed, thumbCanvas}], thumbCanvas }
   let mergedBytes = null;
-  let mergedUrl = null;
   let idCounter = 0;
 
   // ---- DOM refs ----
@@ -958,6 +959,7 @@ input[type="file"] { display: none; }
 
   // ---- PDF validation ----
   function isPDF(arrayBuffer) {
+    if (arrayBuffer.byteLength < 5) return false;
     const header = new Uint8Array(arrayBuffer, 0, 5);
     return header[0] === 0x25 && header[1] === 0x50 && header[2] === 0x44 && header[3] === 0x46 && header[4] === 0x2D;
   }
@@ -1341,7 +1343,6 @@ input[type="file"] { display: none; }
 
   function clearMergedResult() {
     mergedBytes = null;
-    if (mergedUrl) { URL.revokeObjectURL(mergedUrl); mergedUrl = null; }
     downloadSection.classList.remove('active');
     progressSection.classList.remove('active');
   }
@@ -1349,7 +1350,6 @@ input[type="file"] { display: none; }
   function clearAll() {
     pdfFiles = [];
     mergedBytes = null;
-    if (mergedUrl) { URL.revokeObjectURL(mergedUrl); mergedUrl = null; }
     updateUI();
   }
 
@@ -1387,13 +1387,6 @@ input[type="file"] { display: none; }
     e.preventDefault();
     if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files);
   });
-
-  // ---- PDF.js worker setup ----
-  if (typeof pdfjsLib !== 'undefined') {
-    pdfjsLib.GlobalWorkerOptions.workerSrc = '';
-    // Disable worker since it's inlined
-    pdfjsLib.GlobalWorkerOptions.workerPort = null;
-  }
 
   // ---- Init ----
   updateUI();

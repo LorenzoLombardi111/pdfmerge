@@ -4,7 +4,6 @@
   // ---- State ----
   let pdfFiles = []; // { id, file, name, size, pageCount, pages: [{removed, thumbCanvas}], thumbCanvas }
   let mergedBytes = null;
-  let mergedUrl = null;
   let idCounter = 0;
 
   // ---- DOM refs ----
@@ -79,6 +78,7 @@
 
   // ---- PDF validation ----
   function isPDF(arrayBuffer) {
+    if (arrayBuffer.byteLength < 5) return false;
     const header = new Uint8Array(arrayBuffer, 0, 5);
     return header[0] === 0x25 && header[1] === 0x50 && header[2] === 0x44 && header[3] === 0x46 && header[4] === 0x2D;
   }
@@ -462,7 +462,6 @@
 
   function clearMergedResult() {
     mergedBytes = null;
-    if (mergedUrl) { URL.revokeObjectURL(mergedUrl); mergedUrl = null; }
     downloadSection.classList.remove('active');
     progressSection.classList.remove('active');
   }
@@ -470,7 +469,6 @@
   function clearAll() {
     pdfFiles = [];
     mergedBytes = null;
-    if (mergedUrl) { URL.revokeObjectURL(mergedUrl); mergedUrl = null; }
     updateUI();
   }
 
@@ -508,13 +506,6 @@
     e.preventDefault();
     if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files);
   });
-
-  // ---- PDF.js worker setup ----
-  if (typeof pdfjsLib !== 'undefined') {
-    pdfjsLib.GlobalWorkerOptions.workerSrc = '';
-    // Disable worker since it's inlined
-    pdfjsLib.GlobalWorkerOptions.workerPort = null;
-  }
 
   // ---- Init ----
   updateUI();

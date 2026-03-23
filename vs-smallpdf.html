@@ -133,7 +133,7 @@
       --border: #e8e4dd;
       --text-primary: #1a1917;
       --text-secondary: #6b6760;
-      --text-muted: #9e9b96;
+      --text-muted: #736f69;
       --accent: #C49A2A;
       --accent-hover: #A8831F;
       --accent-text: #ffffff;
@@ -146,7 +146,7 @@
       --border: #2e2b27;
       --text-primary: #f0ede8;
       --text-secondary: #9e9b96;
-      --text-muted: #6b6760;
+      --text-muted: #8a8680;
       --accent: #D4A835;
       --accent-hover: #C49A2A;
       --accent-text: #ffffff;
@@ -456,6 +456,7 @@
       .related-links a { text-align: center; }
     }
   </style>
+  <script>(function(){var s=localStorage.getItem('suite_theme');if(s==='dark'||(!s&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark')}})()</script>
 </head>
 <body>
 
@@ -466,7 +467,7 @@
       <span class="separator" aria-hidden="true">&rsaquo;</span>
       <span class="current">freemergepdf.app vs SmallPDF</span>
     </nav>
-    <button class="theme-toggle" aria-label="Toggle dark mode" type="button">
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode" type="button">
       <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
       <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
     </button>
@@ -604,27 +605,6 @@
   <!-- Attribution -->
   <a href="https://freesuite.app" class="attribution" target="_blank" rel="noopener">by freesuite.app</a>
 
-  <!-- Dark mode script -->
-  <script>
-    (function() {
-      var html = document.documentElement;
-      var stored = localStorage.getItem('suite_theme');
-      if (stored === 'dark') {
-        html.classList.add('dark');
-      } else if (stored === 'light') {
-        html.classList.remove('dark');
-      } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-        html.classList.add('dark');
-      }
-
-      var toggle = document.querySelector('.theme-toggle');
-      if (toggle) {
-        toggle.addEventListener('click', function() {
-          var isDark = html.classList.toggle('dark');
-          localStorage.setItem('suite_theme', isDark ? 'dark' : 'light');
-        });
-      }
-    })();
-  </script>
+  <script>document.getElementById('themeToggle').addEventListener('click',function(){document.documentElement.classList.toggle('dark');localStorage.setItem('suite_theme',document.documentElement.classList.contains('dark')?'dark':'light')})</script>
 </body>
 </html>

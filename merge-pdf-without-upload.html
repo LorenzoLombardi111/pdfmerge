@@ -113,13 +113,13 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
       --bg: #faf9f6; --surface: #f4f2ee; --border: #e8e4dd;
-      --text-primary: #1a1917; --text-secondary: #6b6760; --text-muted: #9e9b96;
+      --text-primary: #1a1917; --text-secondary: #6b6760; --text-muted: #736f69;
       --accent: #C49A2A; --accent-hover: #A8831F; --accent-text: #ffffff;
       --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04);
     }
     html.dark {
       --bg: #141412; --surface: #1e1c1a; --border: #2e2b27;
-      --text-primary: #f0ede8; --text-secondary: #9e9b96; --text-muted: #6b6760;
+      --text-primary: #f0ede8; --text-secondary: #9e9b96; --text-muted: #8a8680;
       --accent: #D4A835; --accent-hover: #C49A2A; --accent-text: #ffffff;
       --shadow: 0 1px 3px rgba(0,0,0,0.3), 0 2px 8px rgba(0,0,0,0.2);
     }
@@ -170,6 +170,7 @@
       .related-links { flex-direction: column; } .related-links li a { display: block; }
     }
   </style>
+  <script>(function(){var s=localStorage.getItem('suite_theme');if(s==='dark'||(!s&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark')}})()</script>
 </head>
 <body>
 
@@ -269,18 +270,6 @@
 
   <a href="https://freesuite.app" class="attribution">by freesuite.app</a>
 
-  <script>
-    (function() {
-      var toggle = document.getElementById('themeToggle');
-      var saved = localStorage.getItem('suite_theme');
-      if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-        document.documentElement.classList.add('dark');
-      }
-      toggle.addEventListener('click', function() {
-        document.documentElement.classList.toggle('dark');
-        localStorage.setItem('suite_theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
-      });
-    })();
-  </script>
+  <script>document.getElementById('themeToggle').addEventListener('click',function(){document.documentElement.classList.toggle('dark');localStorage.setItem('suite_theme',document.documentElement.classList.contains('dark')?'dark':'light')})</script>
 </body>
 </html>
