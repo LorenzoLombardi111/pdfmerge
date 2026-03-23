@@ -4,6 +4,7 @@
   // ---- State ----
   let pdfFiles = []; // { id, file, name, size, pageCount, pages: [{removed, thumbCanvas}], thumbCanvas }
   let mergedBytes = null;
+  let previewPages = []; // array of { originalIndex } for remaining pages
   let idCounter = 0;
 
   // ---- DOM refs ----
@@ -455,9 +456,34 @@
     }
   }
 
-  function downloadMerged() {
+  async function downloadMerged() {
     if (!mergedBytes) return;
-    const blob = new Blob([mergedBytes], { type: 'application/pdf' });
+
+    var bytesToDownload;
+    // Rebuild PDF if pages were removed or reordered in preview
+    if (previewPages.length > 0) {
+      const srcDoc = await PDFLib.PDFDocument.load(mergedBytes.slice(0));
+      const totalMerged = srcDoc.getPageCount();
+      var indices = previewPages.map(function(p) { return p.originalIndex; });
+      var needsRebuild = indices.length !== totalMerged;
+      if (!needsRebuild) {
+        for (var i = 0; i < indices.length; i++) {
+          if (indices[i] !== i) { needsRebuild = true; break; }
+        }
+      }
+      if (needsRebuild) {
+        const outDoc = await PDFLib.PDFDocument.create();
+        const copied = await outDoc.copyPages(srcDoc, indices);
+        copied.forEach(function(p) { outDoc.addPage(p); });
+        bytesToDownload = await outDoc.save();
+      } else {
+        bytesToDownload = mergedBytes;
+      }
+    } else {
+      bytesToDownload = mergedBytes;
+    }
+
+    const blob = new Blob([bytesToDownload], { type: 'application/pdf' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -482,7 +508,7 @@
 
   // ---- Preview ----
   async function showPreview(pageCount) {
-    previewPageCount.textContent = pageCount + ' page' + (pageCount !== 1 ? 's' : '');
+    previewPages = [];
     previewGrid.innerHTML = '';
 
     // Hide file list, show preview
@@ -495,6 +521,8 @@
     const pdf = await loadingTask.promise;
 
     for (let i = 1; i <= pdf.numPages; i++) {
+      previewPages.push({ originalIndex: i - 1 });
+
       const page = await pdf.getPage(i);
       const vp = page.getViewport({ scale: 1 });
       const scale = 200 / vp.width;
@@ -508,21 +536,250 @@
 
       const thumb = document.createElement('div');
       thumb.className = 'preview-thumb';
+      thumb.draggable = true;
       thumb.appendChild(canvas);
+
+      const dragHandle = document.createElement('span');
+      dragHandle.className = 'preview-drag-handle';
+      dragHandle.textContent = '\u2630';
+      thumb.appendChild(dragHandle);
 
       const label = document.createElement('div');
       label.className = 'preview-page-label';
       label.textContent = 'Page ' + i;
       thumb.appendChild(label);
 
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'preview-remove';
+      removeBtn.textContent = '\u2715';
+      removeBtn.setAttribute('aria-label', 'Remove page ' + i);
+      removeBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        removePreviewPage(thumb);
+      });
+      thumb.appendChild(removeBtn);
+
+      attachPreviewDrag(thumb);
       previewGrid.appendChild(thumb);
     }
 
     pdf.destroy();
+    updatePreviewPageCount();
+  }
+
+  function updatePreviewPageCount() {
+    var count = previewGrid.querySelectorAll('.preview-thumb:not(.removing)').length;
+    previewPageCount.textContent = count + ' page' + (count !== 1 ? 's' : '');
+    statusLeft.textContent = 'Preview: ' + count + ' page' + (count !== 1 ? 's' : '');
+  }
+
+  function renumberPreviewPages() {
+    var thumbs = previewGrid.querySelectorAll('.preview-thumb');
+    var seq = 1;
+    thumbs.forEach(function(thumb) {
+      var label = thumb.querySelector('.preview-page-label');
+      var btn = thumb.querySelector('.preview-remove');
+      label.textContent = 'Page ' + seq;
+      btn.setAttribute('aria-label', 'Remove page ' + seq);
+      seq++;
+    });
+  }
+
+  function removePreviewPage(thumbEl) {
+    var allThumbs = previewGrid.querySelectorAll('.preview-thumb');
+    if (allThumbs.length <= 1) {
+      showToast('Cannot remove the last page');
+      return;
+    }
+
+    // Find index in current list to remove from previewPages
+    var idx = Array.from(allThumbs).indexOf(thumbEl);
+    if (idx === -1) return;
+
+    thumbEl.classList.add('removing');
+    setTimeout(function() {
+      previewPages.splice(idx, 1);
+      thumbEl.remove();
+      renumberPreviewPages();
+      updatePreviewPageCount();
+    }, 150);
+  }
+
+  // ---- Preview drag-and-drop ----
+  var previewDragIdx = -1;
+
+  function getPreviewThumbIndex(el) {
+    var thumbs = Array.from(previewGrid.querySelectorAll('.preview-thumb'));
+    return thumbs.indexOf(el);
+  }
+
+  function clearPreviewDragIndicators() {
+    previewGrid.querySelectorAll('.drag-insert-before').forEach(function(t) {
+      t.classList.remove('drag-insert-before');
+    });
+  }
+
+  function movePreviewPage(fromIdx, toIdx) {
+    if (fromIdx === toIdx || fromIdx === -1 || toIdx === -1) return;
+    var thumbs = Array.from(previewGrid.querySelectorAll('.preview-thumb'));
+    var movedThumb = thumbs[fromIdx];
+    var targetThumb = thumbs[toIdx];
+
+    // Move in previewPages array
+    var moved = previewPages.splice(fromIdx, 1)[0];
+    previewPages.splice(toIdx, 0, moved);
+
+    // Move DOM element
+    if (toIdx < fromIdx) {
+      previewGrid.insertBefore(movedThumb, targetThumb);
+    } else {
+      var next = targetThumb.nextElementSibling;
+      if (next) {
+        previewGrid.insertBefore(movedThumb, next);
+      } else {
+        previewGrid.appendChild(movedThumb);
+      }
+    }
+
+    renumberPreviewPages();
+  }
+
+  function attachPreviewDrag(thumb) {
+    // HTML5 drag events
+    thumb.addEventListener('dragstart', function(e) {
+      previewDragIdx = getPreviewThumbIndex(thumb);
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', '');
+      thumb.classList.add('dragging-preview');
+    });
+    thumb.addEventListener('dragend', function() {
+      thumb.classList.remove('dragging-preview');
+      clearPreviewDragIndicators();
+      previewDragIdx = -1;
+    });
+    thumb.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      clearPreviewDragIndicators();
+      var idx = getPreviewThumbIndex(thumb);
+      if (idx !== previewDragIdx) {
+        thumb.classList.add('drag-insert-before');
+      }
+    });
+    thumb.addEventListener('dragleave', function() {
+      thumb.classList.remove('drag-insert-before');
+    });
+    thumb.addEventListener('drop', function(e) {
+      e.preventDefault();
+      clearPreviewDragIndicators();
+      var toIdx = getPreviewThumbIndex(thumb);
+      if (previewDragIdx !== -1 && previewDragIdx !== toIdx) {
+        movePreviewPage(previewDragIdx, toIdx);
+      }
+      previewDragIdx = -1;
+    });
+
+    // Touch drag (long press 300ms)
+    var touchTimer = null;
+    var touchDragging = false;
+    var touchClone = null;
+    var touchStartX = 0, touchStartY = 0;
+
+    thumb.addEventListener('touchstart', function(e) {
+      if (e.touches.length !== 1) return;
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+      touchTimer = setTimeout(function() {
+        touchDragging = true;
+        previewDragIdx = getPreviewThumbIndex(thumb);
+        thumb.classList.add('dragging-preview');
+
+        // Create floating clone
+        touchClone = thumb.cloneNode(true);
+        touchClone.style.position = 'fixed';
+        touchClone.style.pointerEvents = 'none';
+        touchClone.style.zIndex = '1000';
+        touchClone.style.width = thumb.offsetWidth + 'px';
+        touchClone.style.opacity = '0.8';
+        touchClone.style.left = (touchStartX - thumb.offsetWidth / 2) + 'px';
+        touchClone.style.top = (touchStartY - thumb.offsetHeight / 2) + 'px';
+        document.body.appendChild(touchClone);
+      }, 300);
+    }, { passive: true });
+
+    thumb.addEventListener('touchmove', function(e) {
+      if (!touchDragging) {
+        // Cancel long press if finger moved too far
+        var dx = e.touches[0].clientX - touchStartX;
+        var dy = e.touches[0].clientY - touchStartY;
+        if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
+          clearTimeout(touchTimer);
+          touchTimer = null;
+        }
+        return;
+      }
+      e.preventDefault();
+      var tx = e.touches[0].clientX;
+      var ty = e.touches[0].clientY;
+
+      if (touchClone) {
+        touchClone.style.left = (tx - thumb.offsetWidth / 2) + 'px';
+        touchClone.style.top = (ty - thumb.offsetHeight / 2) + 'px';
+      }
+
+      clearPreviewDragIndicators();
+      var target = document.elementFromPoint(tx, ty);
+      if (target) {
+        var targetThumb = target.closest('.preview-thumb');
+        if (targetThumb && targetThumb !== thumb && previewGrid.contains(targetThumb)) {
+          targetThumb.classList.add('drag-insert-before');
+        }
+      }
+    }, { passive: false });
+
+    thumb.addEventListener('touchend', function() {
+      clearTimeout(touchTimer);
+      touchTimer = null;
+
+      if (touchDragging) {
+        thumb.classList.remove('dragging-preview');
+        if (touchClone) {
+          touchClone.remove();
+          touchClone = null;
+        }
+
+        // Find drop target
+        var indicated = previewGrid.querySelector('.drag-insert-before');
+        clearPreviewDragIndicators();
+        if (indicated) {
+          var toIdx = getPreviewThumbIndex(indicated);
+          if (previewDragIdx !== -1 && previewDragIdx !== toIdx) {
+            movePreviewPage(previewDragIdx, toIdx);
+          }
+        }
+        previewDragIdx = -1;
+        touchDragging = false;
+      }
+    });
+
+    thumb.addEventListener('touchcancel', function() {
+      clearTimeout(touchTimer);
+      touchTimer = null;
+      touchDragging = false;
+      thumb.classList.remove('dragging-preview');
+      clearPreviewDragIndicators();
+      if (touchClone) {
+        touchClone.remove();
+        touchClone = null;
+      }
+      previewDragIdx = -1;
+    });
   }
 
   function hidePreview() {
     previewSection.classList.remove('active');
+    previewPages = [];
+    previewGrid.innerHTML = '';
     if (pdfFiles.length > 0) {
       appLoaded.classList.add('active');
     } else {
