@@ -460,12 +460,18 @@
     if (!mergedBytes) return;
 
     var bytesToDownload;
-    // Check if pages were removed in preview
+    // Rebuild PDF if pages were removed or reordered in preview
     if (previewPages.length > 0) {
       const srcDoc = await PDFLib.PDFDocument.load(mergedBytes.slice(0));
       const totalMerged = srcDoc.getPageCount();
       var indices = previewPages.map(function(p) { return p.originalIndex; });
-      if (indices.length < totalMerged) {
+      var needsRebuild = indices.length !== totalMerged;
+      if (!needsRebuild) {
+        for (var i = 0; i < indices.length; i++) {
+          if (indices[i] !== i) { needsRebuild = true; break; }
+        }
+      }
+      if (needsRebuild) {
         const outDoc = await PDFLib.PDFDocument.create();
         const copied = await outDoc.copyPages(srcDoc, indices);
         copied.forEach(function(p) { outDoc.addPage(p); });
@@ -564,6 +570,7 @@
   function updatePreviewPageCount() {
     var count = previewGrid.querySelectorAll('.preview-thumb:not(.removing)').length;
     previewPageCount.textContent = count + ' page' + (count !== 1 ? 's' : '');
+    statusLeft.textContent = 'Preview: ' + count + ' page' + (count !== 1 ? 's' : '');
   }
 
   function renumberPreviewPages() {
@@ -771,6 +778,8 @@
 
   function hidePreview() {
     previewSection.classList.remove('active');
+    previewPages = [];
+    previewGrid.innerHTML = '';
     if (pdfFiles.length > 0) {
       appLoaded.classList.add('active');
     } else {
