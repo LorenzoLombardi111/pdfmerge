@@ -6,6 +6,7 @@ const pdfWorker = fs.readFileSync('node_modules/pdfjs-dist/build/pdf.worker.min.
 const css = fs.readFileSync('src/styles.css', 'utf8');
 const appJs = fs.readFileSync('src/app.js', 'utf8');
 const seoHtml = fs.readFileSync('src/seo.html', 'utf8');
+const faviconSvg = fs.readFileSync('favicon.svg', 'utf8');
 
 const faqLD = {
   "@context": "https://schema.org",
@@ -71,6 +72,7 @@ const html = `<!DOCTYPE html>
   <title>Free PDF Merger Online - No Upload Required | freemergepdf.app</title>
   <meta name="description" content="Free online PDF merger. Combine multiple PDFs in your browser — no upload, no login, no watermarks. Drag, drop, merge. freemergepdf.app">
   <meta name="robots" content="index, follow">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,${encodeURIComponent(faviconSvg)}">
   <link rel="canonical" href="https://freemergepdf.app/">
   <meta name="theme-color" content="#faf9f6">
   <link rel="manifest" href="/manifest.json">
