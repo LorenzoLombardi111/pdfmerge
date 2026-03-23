@@ -614,6 +614,71 @@ html.dark .theme-toggle .icon-sun { display: block; }
   to { opacity: 0; }
 }
 
+/* Preview section */
+.preview-section {
+  display: none;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+}
+.preview-section.active {
+  display: flex;
+}
+.preview-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.preview-page-count {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.preview-grid {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  align-content: start;
+}
+.preview-thumb {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+html.dark .preview-thumb {
+  background: var(--surface);
+}
+.preview-thumb canvas {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 4px;
+}
+.preview-thumb .preview-page-label {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 6px;
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .preview-grid { grid-template-columns: repeat(2, 1fr); padding: 16px; }
+  .preview-toolbar { padding: 12px 16px; }
+}
+
 /* SEO section */
 .seo-content {
   padding: 64px 24px;
@@ -757,6 +822,15 @@ input[type="file"] { display: none; }
           <a class="up-link" href="https://freesuite.app">Unlock with freesuite.app &middot; $2.88/mo</a>
         </div>
       </nav>
+    </div>
+    <!-- Preview screen (after merge) -->
+    <div class="preview-section">
+      <div class="preview-toolbar">
+        <button class="btn btn-secondary" id="preview-back-btn">&larr; Back</button>
+        <span class="preview-page-count" id="preview-page-count">0 pages</span>
+        <button class="btn btn-primary" id="preview-download-btn">Download PDF</button>
+      </div>
+      <div class="preview-grid" id="preview-grid"></div>
     </div>
   </main>
 
@@ -918,6 +992,11 @@ input[type="file"] { display: none; }
   const clearBtn = $('#clear-btn');
   const dropZoneMini = $('.drop-zone-mini');
   const toastContainer = $('.toast-container');
+  const previewSection = $('.preview-section');
+  const previewGrid = $('#preview-grid');
+  const previewPageCount = $('#preview-page-count');
+  const previewBackBtn = $('#preview-back-btn');
+  const previewDownloadBtn = $('#preview-download-btn');
 
   // ---- Theme ----
   function initTheme() {
@@ -1322,10 +1401,10 @@ input[type="file"] { display: none; }
       outputInfo.textContent = fileName + ' · ' + totalPg + ' pages · ' + formatSize(mergedBytes.length);
 
       progressSection.classList.remove('active');
-      downloadSection.classList.add('active');
       mergeBtn.disabled = false;
 
       showToast('PDF merged successfully!');
+      showPreview(totalPg);
     } catch (e) {
       progressSection.classList.remove('active');
       mergeBtn.disabled = false;
@@ -1362,6 +1441,58 @@ input[type="file"] { display: none; }
     updateUI();
   }
 
+  // ---- Preview ----
+  async function showPreview(pageCount) {
+    previewPageCount.textContent = pageCount + ' page' + (pageCount !== 1 ? 's' : '');
+    previewGrid.innerHTML = '';
+
+    // Hide file list, show preview
+    appLoaded.classList.remove('active');
+    dropZoneEmpty.style.display = 'none';
+    previewSection.classList.add('active');
+
+    // Render thumbnails from mergedBytes
+    const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(mergedBytes) });
+    const pdf = await loadingTask.promise;
+
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const vp = page.getViewport({ scale: 1 });
+      const scale = 200 / vp.width;
+      const viewport = page.getViewport({ scale });
+
+      const canvas = document.createElement('canvas');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      const ctx = canvas.getContext('2d');
+      await page.render({ canvasContext: ctx, viewport }).promise;
+
+      const thumb = document.createElement('div');
+      thumb.className = 'preview-thumb';
+      thumb.appendChild(canvas);
+
+      const label = document.createElement('div');
+      label.className = 'preview-page-label';
+      label.textContent = 'Page ' + i;
+      thumb.appendChild(label);
+
+      previewGrid.appendChild(thumb);
+    }
+
+    pdf.destroy();
+  }
+
+  function hidePreview() {
+    previewSection.classList.remove('active');
+    if (pdfFiles.length > 0) {
+      appLoaded.classList.add('active');
+    } else {
+      dropZoneEmpty.style.display = '';
+    }
+    clearMergedResult();
+    updateUI();
+  }
+
   // ---- Event listeners ----
   mergeBtn.addEventListener('click', doMerge);
   downloadBtn.addEventListener('click', downloadMerged);
@@ -1370,6 +1501,8 @@ input[type="file"] { display: none; }
     updateUI();
   });
   clearBtn.addEventListener('click', clearAll);
+  previewBackBtn.addEventListener('click', hidePreview);
+  previewDownloadBtn.addEventListener('click', downloadMerged);
 
   // File inputs
   fileInput.addEventListener('change', (e) => { if (e.target.files.length) addFiles(e.target.files); e.target.value = ''; });
