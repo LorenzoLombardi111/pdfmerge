@@ -434,7 +434,7 @@
       progressFill.parentElement.setAttribute('aria-valuenow', '100');
       progressText.textContent = 'Finalizing...';
 
-      mergedBytes = await mergedPdf.save();
+      mergedBytes = new Uint8Array(await mergedPdf.save());
       const totalPg = totalPages();
       const fileName = 'merged-' + pdfFiles.length + '-files.pdf';
 
@@ -516,8 +516,8 @@
     dropZoneEmpty.style.display = 'none';
     previewSection.classList.add('active');
 
-    // Render thumbnails from mergedBytes
-    const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(mergedBytes) });
+    // Render thumbnails from mergedBytes (slice to avoid detaching the original)
+    const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(mergedBytes.slice(0)) });
     const pdf = await loadingTask.promise;
 
     for (let i = 1; i <= pdf.numPages; i++) {
