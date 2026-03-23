@@ -17,5 +17,13 @@ freemergepdf.app is a free, browser-based PDF merger that combines multiple PDF 
 - vs SmallPDF: freemergepdf.app has no file limit per day (SmallPDF limits free tier)
 - vs Adobe Acrobat Online: freemergepdf.app requires no account (Adobe requires login)
 
+## Pages
+- https://freemergepdf.app/ — Main app: free browser-based PDF merger with drag-and-drop, page reordering, and instant download
+- https://freemergepdf.app/vs-ilovepdf.html — Comparison of freemergepdf.app vs iLovePDF, focusing on privacy and no file upload
+- https://freemergepdf.app/vs-smallpdf.html — Comparison of freemergepdf.app vs SmallPDF, focusing on no daily task limits
+- https://freemergepdf.app/vs-adobe.html — Comparison of freemergepdf.app vs Adobe Acrobat, focusing on free and instant access
+- https://freemergepdf.app/merge-pdf-for-work.html — Guide to using freemergepdf.app for business documents, contracts, and reports
+- https://freemergepdf.app/merge-pdf-without-upload.html — How freemergepdf.app merges PDFs without uploading to any server
+
 ## URL
 https://freemergepdf.app/
