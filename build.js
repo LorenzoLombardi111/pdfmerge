@@ -175,6 +175,15 @@ const html = `<!DOCTYPE html>
         </div>
       </nav>
     </div>
+    <!-- Preview screen (after merge) -->
+    <div class="preview-section">
+      <div class="preview-toolbar">
+        <button class="btn btn-secondary" id="preview-back-btn">&larr; Back</button>
+        <span class="preview-page-count" id="preview-page-count">0 pages</span>
+        <button class="btn btn-primary" id="preview-download-btn">Download PDF</button>
+      </div>
+      <div class="preview-grid" id="preview-grid"></div>
+    </div>
   </main>
 
   <div class="status-bar">

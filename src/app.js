@@ -31,6 +31,11 @@
   const clearBtn = $('#clear-btn');
   const dropZoneMini = $('.drop-zone-mini');
   const toastContainer = $('.toast-container');
+  const previewSection = $('.preview-section');
+  const previewGrid = $('#preview-grid');
+  const previewPageCount = $('#preview-page-count');
+  const previewBackBtn = $('#preview-back-btn');
+  const previewDownloadBtn = $('#preview-download-btn');
 
   // ---- Theme ----
   function initTheme() {
@@ -435,10 +440,10 @@
       outputInfo.textContent = fileName + ' · ' + totalPg + ' pages · ' + formatSize(mergedBytes.length);
 
       progressSection.classList.remove('active');
-      downloadSection.classList.add('active');
       mergeBtn.disabled = false;
 
       showToast('PDF merged successfully!');
+      showPreview(totalPg);
     } catch (e) {
       progressSection.classList.remove('active');
       mergeBtn.disabled = false;
@@ -475,6 +480,58 @@
     updateUI();
   }
 
+  // ---- Preview ----
+  async function showPreview(pageCount) {
+    previewPageCount.textContent = pageCount + ' page' + (pageCount !== 1 ? 's' : '');
+    previewGrid.innerHTML = '';
+
+    // Hide file list, show preview
+    appLoaded.classList.remove('active');
+    dropZoneEmpty.style.display = 'none';
+    previewSection.classList.add('active');
+
+    // Render thumbnails from mergedBytes
+    const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(mergedBytes) });
+    const pdf = await loadingTask.promise;
+
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const vp = page.getViewport({ scale: 1 });
+      const scale = 200 / vp.width;
+      const viewport = page.getViewport({ scale });
+
+      const canvas = document.createElement('canvas');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      const ctx = canvas.getContext('2d');
+      await page.render({ canvasContext: ctx, viewport }).promise;
+
+      const thumb = document.createElement('div');
+      thumb.className = 'preview-thumb';
+      thumb.appendChild(canvas);
+
+      const label = document.createElement('div');
+      label.className = 'preview-page-label';
+      label.textContent = 'Page ' + i;
+      thumb.appendChild(label);
+
+      previewGrid.appendChild(thumb);
+    }
+
+    pdf.destroy();
+  }
+
+  function hidePreview() {
+    previewSection.classList.remove('active');
+    if (pdfFiles.length > 0) {
+      appLoaded.classList.add('active');
+    } else {
+      dropZoneEmpty.style.display = '';
+    }
+    clearMergedResult();
+    updateUI();
+  }
+
   // ---- Event listeners ----
   mergeBtn.addEventListener('click', doMerge);
   downloadBtn.addEventListener('click', downloadMerged);
@@ -483,6 +540,8 @@
     updateUI();
   });
   clearBtn.addEventListener('click', clearAll);
+  previewBackBtn.addEventListener('click', hidePreview);
+  previewDownloadBtn.addEventListener('click', downloadMerged);
 
   // File inputs
   fileInput.addEventListener('change', (e) => { if (e.target.files.length) addFiles(e.target.files); e.target.value = ''; });
