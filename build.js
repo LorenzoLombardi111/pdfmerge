@@ -101,6 +101,12 @@ const html = `<!DOCTYPE html>
   <script type="application/ld+json">${JSON.stringify(faqLD)}</script>
   <script type="application/ld+json">${JSON.stringify(breadcrumbLD)}</script>
 
+  <!-- Vercel Web Analytics -->
+  <script>
+    window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+  </script>
+  <script defer src="/_vercel/insights/script.js"></script>
+
   <style>${css}</style>
 </head>
 <body>
