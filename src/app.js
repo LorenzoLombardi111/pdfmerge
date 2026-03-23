@@ -4,6 +4,7 @@
   // ---- State ----
   let pdfFiles = []; // { id, file, name, size, pageCount, pages: [{removed, thumbCanvas}], thumbCanvas }
   let mergedBytes = null;
+  let previewPages = []; // array of { originalIndex } for remaining pages
   let idCounter = 0;
 
   // ---- DOM refs ----
@@ -455,9 +456,28 @@
     }
   }
 
-  function downloadMerged() {
+  async function downloadMerged() {
     if (!mergedBytes) return;
-    const blob = new Blob([mergedBytes], { type: 'application/pdf' });
+
+    var bytesToDownload;
+    // Check if pages were removed in preview
+    if (previewPages.length > 0) {
+      const srcDoc = await PDFLib.PDFDocument.load(mergedBytes.slice(0));
+      const totalMerged = srcDoc.getPageCount();
+      var indices = previewPages.map(function(p) { return p.originalIndex; });
+      if (indices.length < totalMerged) {
+        const outDoc = await PDFLib.PDFDocument.create();
+        const copied = await outDoc.copyPages(srcDoc, indices);
+        copied.forEach(function(p) { outDoc.addPage(p); });
+        bytesToDownload = await outDoc.save();
+      } else {
+        bytesToDownload = mergedBytes;
+      }
+    } else {
+      bytesToDownload = mergedBytes;
+    }
+
+    const blob = new Blob([bytesToDownload], { type: 'application/pdf' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -482,7 +502,7 @@
 
   // ---- Preview ----
   async function showPreview(pageCount) {
-    previewPageCount.textContent = pageCount + ' page' + (pageCount !== 1 ? 's' : '');
+    previewPages = [];
     previewGrid.innerHTML = '';
 
     // Hide file list, show preview
@@ -495,6 +515,8 @@
     const pdf = await loadingTask.promise;
 
     for (let i = 1; i <= pdf.numPages; i++) {
+      previewPages.push({ originalIndex: i - 1 });
+
       const page = await pdf.getPage(i);
       const vp = page.getViewport({ scale: 1 });
       const scale = 200 / vp.width;
@@ -515,10 +537,58 @@
       label.textContent = 'Page ' + i;
       thumb.appendChild(label);
 
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'preview-remove';
+      removeBtn.textContent = '\u2715';
+      removeBtn.setAttribute('aria-label', 'Remove page ' + i);
+      removeBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        removePreviewPage(thumb);
+      });
+      thumb.appendChild(removeBtn);
+
       previewGrid.appendChild(thumb);
     }
 
     pdf.destroy();
+    updatePreviewPageCount();
+  }
+
+  function updatePreviewPageCount() {
+    var count = previewGrid.querySelectorAll('.preview-thumb:not(.removing)').length;
+    previewPageCount.textContent = count + ' page' + (count !== 1 ? 's' : '');
+  }
+
+  function renumberPreviewPages() {
+    var thumbs = previewGrid.querySelectorAll('.preview-thumb');
+    var seq = 1;
+    thumbs.forEach(function(thumb) {
+      var label = thumb.querySelector('.preview-page-label');
+      var btn = thumb.querySelector('.preview-remove');
+      label.textContent = 'Page ' + seq;
+      btn.setAttribute('aria-label', 'Remove page ' + seq);
+      seq++;
+    });
+  }
+
+  function removePreviewPage(thumbEl) {
+    var allThumbs = previewGrid.querySelectorAll('.preview-thumb');
+    if (allThumbs.length <= 1) {
+      showToast('Cannot remove the last page');
+      return;
+    }
+
+    // Find index in current list to remove from previewPages
+    var idx = Array.from(allThumbs).indexOf(thumbEl);
+    if (idx === -1) return;
+
+    thumbEl.classList.add('removing');
+    setTimeout(function() {
+      previewPages.splice(idx, 1);
+      thumbEl.remove();
+      renumberPreviewPages();
+      updatePreviewPageCount();
+    }, 150);
   }
 
   function hidePreview() {
