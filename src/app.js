@@ -140,10 +140,13 @@
           continue;
         }
 
+        // Keep a safe copy that won't be detached by pdf-lib or pdf.js
+        const safeBuffer = arrayBuffer.slice(0);
+
         // Check for encryption
         let pageCount;
         try {
-          const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer, { ignoreEncryption: false });
+          const pdfDoc = await PDFLib.PDFDocument.load(safeBuffer.slice(0), { ignoreEncryption: false });
           pageCount = pdfDoc.getPageCount();
         } catch (e) {
           if (e.message && (e.message.includes('encrypt') || e.message.includes('password'))) {
@@ -154,7 +157,7 @@
           continue;
         }
 
-        const thumbCanvas = await renderThumb(arrayBuffer, 0, 84);
+        const thumbCanvas = await renderThumb(safeBuffer, 0, 84);
         const pages = [];
         for (let i = 0; i < pageCount; i++) {
           pages.push({ removed: false, thumbCanvas: null, index: i });
@@ -163,7 +166,7 @@
         pdfFiles.push({
           id: ++idCounter,
           file,
-          arrayBuffer,
+          arrayBuffer: safeBuffer,
           name: file.name,
           size: file.size,
           pageCount,
@@ -408,7 +411,7 @@
         progressFill.style.width = pct + '%';
         progressFill.parentElement.setAttribute('aria-valuenow', pct);
 
-        const pdf = await PDFLib.PDFDocument.load(pf.arrayBuffer);
+        const pdf = await PDFLib.PDFDocument.load(pf.arrayBuffer.slice(0));
         const activeIndices = pf.pages
           .filter(p => !p.removed)
           .map(p => p.index);
