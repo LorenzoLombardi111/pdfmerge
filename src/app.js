@@ -93,7 +93,8 @@
   async function renderThumb(arrayBuffer, pageIndex, width) {
     const canvas = document.createElement('canvas');
     try {
-      const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer.slice(0)) });
+      const copy = new Uint8Array(new Uint8Array(arrayBuffer)).buffer;
+      const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(copy) });
       const pdf = await loadingTask.promise;
       const page = await pdf.getPage(pageIndex + 1);
       const vp = page.getViewport({ scale: 1 });
@@ -146,13 +147,13 @@
           continue;
         }
 
-        // Keep a safe copy that won't be detached by pdf-lib or pdf.js
-        const safeBuffer = arrayBuffer.slice(0);
+        // Store as Uint8Array so we always own an independent copy
+        const safeBuffer = new Uint8Array(arrayBuffer);
 
         // Check for encryption
         let pageCount;
         try {
-          const pdfDoc = await PDFLib.PDFDocument.load(safeBuffer.slice(0), { ignoreEncryption: false });
+          const pdfDoc = await PDFLib.PDFDocument.load(safeBuffer.buffer.slice(0), { ignoreEncryption: false });
           pageCount = pdfDoc.getPageCount();
         } catch (e) {
           if (e.message && (e.message.includes('encrypt') || e.message.includes('password'))) {
@@ -163,7 +164,7 @@
           continue;
         }
 
-        const thumbCanvas = await renderThumb(safeBuffer, 0, 84);
+        const thumbCanvas = await renderThumb(safeBuffer.buffer, 0, 84);
         const pages = [];
         for (let i = 0; i < pageCount; i++) {
           pages.push({ removed: false, thumbCanvas: null, index: i });
@@ -319,7 +320,7 @@
 
       // Lazy render page thumbnails
       if (!pg.thumbCanvas) {
-        pg.thumbCanvas = await renderThumb(pf.arrayBuffer, pg.index, 150);
+        pg.thumbCanvas = await renderThumb(pf.arrayBuffer.buffer, pg.index, 150);
       }
 
       const c = pg.thumbCanvas.cloneNode(true);
@@ -417,7 +418,7 @@
         progressFill.style.width = pct + '%';
         progressFill.parentElement.setAttribute('aria-valuenow', pct);
 
-        const pdf = await PDFLib.PDFDocument.load(pf.arrayBuffer.slice(0));
+        const pdf = await PDFLib.PDFDocument.load(pf.arrayBuffer.buffer.slice(0));
         const activeIndices = pf.pages
           .filter(p => !p.removed)
           .map(p => p.index);
@@ -462,7 +463,7 @@
     var bytesToDownload;
     // Rebuild PDF if pages were removed or reordered in preview
     if (previewPages.length > 0) {
-      const srcDoc = await PDFLib.PDFDocument.load(mergedBytes.slice(0));
+      const srcDoc = await PDFLib.PDFDocument.load(mergedBytes.buffer.slice(0));
       const totalMerged = srcDoc.getPageCount();
       var indices = previewPages.map(function(p) { return p.originalIndex; });
       var needsRebuild = indices.length !== totalMerged;
@@ -516,8 +517,8 @@
     dropZoneEmpty.style.display = 'none';
     previewSection.classList.add('active');
 
-    // Render thumbnails from mergedBytes (slice to avoid detaching the original)
-    const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(mergedBytes.slice(0)) });
+    // Render thumbnails from mergedBytes (fresh copy to avoid detaching the original)
+    const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(mergedBytes.buffer.slice(0)) });
     const pdf = await loadingTask.promise;
 
     for (let i = 1; i <= pdf.numPages; i++) {
