@@ -968,7 +968,7 @@ input[type="file"] { display: none; }
   async function renderThumb(arrayBuffer, pageIndex, width) {
     const canvas = document.createElement('canvas');
     try {
-      const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) });
+      const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer.slice(0)) });
       const pdf = await loadingTask.promise;
       const page = await pdf.getPage(pageIndex + 1);
       const vp = page.getViewport({ scale: 1 });
