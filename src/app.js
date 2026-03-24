@@ -516,8 +516,8 @@
     dropZoneEmpty.style.display = 'none';
     previewSection.classList.add('active');
 
-    // Render thumbnails from mergedBytes
-    const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(mergedBytes) });
+    // Render thumbnails from mergedBytes (fresh copy to avoid detaching the original)
+    const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(mergedBytes.buffer.slice(0)) });
     const pdf = await loadingTask.promise;
 
     for (let i = 1; i <= pdf.numPages; i++) {
